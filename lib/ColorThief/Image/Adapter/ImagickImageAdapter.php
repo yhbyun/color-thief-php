@@ -56,7 +56,20 @@ class ImagickImageAdapter extends ImageAdapter
     public function loadFile($file)
     {
         try {
-            $resource = new Imagick($file);
+            if (strpos($file, 'http') === 0) {
+                error_clear_last();
+                $image = @file_get_contents($file);
+                if ($image === false) {
+                    $e = error_get_last();
+                    $error = (isset($e) && isset($e['message']) && $e['message'] != '') ?
+                        $e['message'] : "Image '" . $file . "' is not readable or does not exists.";
+                    throw new \RuntimeException($error);
+                }
+                $resource = new Imagick;
+                $resource->readImageBlob($image);
+            } else {
+                $resource = new Imagick($file);
+            }
         } catch (\ImagickException $e) {
             throw new \RuntimeException("Image '" . $file . "' is not readable or does not exists.", 0, $e);
         }
